@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Marketplace — магазин</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <h1>🛒 Marketplace — магазин</h1>
+
+    <div style="margin-bottom: 20px;">
+        <button id="themeSwitcher" onclick="toggleTheme()">🌓 Системная</button>
+        <button id="btnLogin" onclick="openModal('loginModal')">Войти</button>
+        <button id="btnRegister" onclick="openModal('registerModal')">Регистрация</button>
+        <button id="btnCart" onclick="openCartPanel()" class="hidden">🛒 Корзина</button>
+        <button id="btnAdminUsers" onclick="toggleAdminPanel()" class="hidden">👥 Пользователи</button>
+        <button id="btnLogout" onclick="logout()" class="hidden">Выйти</button>
+        <button id="btnOrders" onclick="openOrders()" class="hidden">📦 Заказы</button>
+        <span id="userInfo" style="margin-left: 20px; font-weight: bold;"></span>
+    </div>
+
+    <div style="display:flex; gap:10px; align-items:center; margin-bottom:10px;">
+        <button id="btnCreateProduct" class="hidden" onclick="openCreateProductModal()" style="background:#28a745; color:white;">➕ Создать товар</button>
+        <input type="text" id="searchQuery" placeholder="Поиск по названию..." style="padding:8px; width:200px;">
+        <select id="categoryFilter" style="padding:8px;">
+            <option value="">Все категории</option>
+        </select>
+        <button onclick="searchProducts()">🔍 Найти</button>
+        <button onclick="resetFilters()">🔄 Сбросить</button>
+    </div>
+
+    <div id="cartSection" style="display:none;" class="cart hidden">
+        <h2>Корзина</h2>
+        <table id="cartTable">
+            <thead><tr><th>Товар</th><th>Цена</th><th>Кол-во</th><th>Действие</th></tr></thead>
+            <tbody></tbody>
+        </table>
+        <button onclick="loadCart()">Обновить корзину</button>
+        <button onclick="clearCart()">Очистить корзину</button>
+        <button onclick="createOrder()">Оформить заказ</button>
+        <div id="cartStatus"></div>
+    </div>
+
+
+    <h2>Список товаров</h2>
+    <div id="productContainer" class="product-grid"></div>
+    <div id="productListStatus"></div>
+
+
+    <div id="loginModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('loginModal')">&times;</span>
+            <h2>Вход</h2>
+            <label>Email: <input type="email" id="loginEmail"></label>
+            <label>Пароль: <input type="password" id="loginPassword"></label>
+            <button onclick="login()">Войти</button>
+            <div id="loginStatus"></div>
+        </div>
+    </div>
+
+
+    <div id="registerModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('registerModal')">&times;</span>
+            <h2>Регистрация</h2>
+            <label>Имя: <input type="text" id="regFirstName" placeholder="Имя"></label>
+            <label>Фамилия: <input type="text" id="regLastName" placeholder="Фамилия"></label>
+            <label>Email: <input type="email" id="regEmail" placeholder="email@example.com"></label>
+            <label>Пароль: <input type="password" id="regPassword" placeholder="Минимум 8 символов"></label>
+            <label>Подтверждение пароля: <input type="password" id="regConfirmPassword" placeholder="Повторите пароль"></label>
+            <label>Роль: 
+                <select id="regRoleSelect">
+                    <option value="Customer">Покупатель</option>
+                    <option value="Seller">Продавец</option>
+                </select>
+            </label>
+            <button onclick="register()">Зарегистрироваться</button>
+            <div id="registerStatus"></div>
+        </div>
+    </div>
+
+    <div id="createProductModal" class="modal">
+        <div class="modal-content" style="max-width:500px;">
+            <span class="close" onclick="document.getElementById('createProductModal').style.display='none'">&times;</span>
+            <h2>Создать товар</h2>
+            <label>Название: <input type="text" id="modalTitle" placeholder="Название товара"></label>
+            <label>Описание: <textarea id="modalDescription" placeholder="Описание"></textarea></label>
+            <label>Цена: <input type="number" id="modalPrice" step="0.01" placeholder="Цена"></label>
+            <label>Остаток: <input type="number" id="modalStock" placeholder="Количество"></label>
+            <label>Категория: <select id="modalCategorySelect"></select></label>
+            <label>Фотографии: <input type="file" id="modalImageFiles" multiple accept="image/*" onchange="previewModalImages()"></label>
+            <div id="modalImagePreview" style="display:flex; gap:5px; flex-wrap:wrap; margin:5px 0;"></div>
+            <button type="button" onclick="openCreateCategoryModal()" style="margin-bottom:10px;">➕ Создать категорию</button>
+            <button onclick="createProductFromModal()">Создать</button>
+            <div id="modalProductStatus"></div>
+        </div>
+    </div>
+
+    <div id="productDetailModal" class="modal">
+        <div class="modal-content" style="max-width:800px; display:flex; overflow:hidden; padding:0;">
+
+            <div id="detailMain" style="flex:1; padding:20px; min-width:0;">
+                <span class="close" onclick="document.getElementById('productDetailModal').style.display='none'">&times;</span>
+                <h2 id="detailTitle"></h2>
+                <div id="detailImages" style="margin:10px 0;"></div>
+                <p><strong>Категория:</strong> <span id="detailCategory"></span></p>
+                <p><strong>Цена:</strong> <span id="detailPrice"></span></p>
+                <p><strong>Остаток:</strong> <span id="detailStock"></span></p>
+                <p><strong>Описание:</strong> <span id="detailDescription"></span></p>
+                <div id="detailActions" style="margin-top:15px;"></div>
+            </div>
+
+            <div id="detailReviewsPanel" style="width:320px; background: var(--modal-bg); border-left:1px solid var(--table-border); padding:20px; display:none; flex-direction:column; overflow-y:auto;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                    <h3 style="margin:0;">Отзывы</h3>
+                    <button onclick="closeDetailReviews()" style="background:none; border:none; font-size:20px; cursor:pointer; color: var(--text-color);">&times;</button>
+                </div>
+                <div id="detailReviewsContent" style="flex:1; margin-bottom:10px;"></div>
+                <div>
+                    <label style="display:block; margin-bottom:5px;">Рейтинг (1-5):
+                        <input type="number" id="detailReviewRating" min="1" max="5" value="5" style="width:60px; margin-left:5px;">
+                    </label>
+                    <textarea id="detailReviewComment" placeholder="Ваш отзыв..." style="width:100%; height:60px; margin-bottom:5px;"></textarea>
+            <label>Фото: <input type="file" id="reviewImages" multiple accept="image/*"></label>
+                    <button onclick="submitDetailReview()">Отправить</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="ordersModal" class="modal">
+        <div class="modal-content" style="max-width:700px;">
+            <span class="close" onclick="document.getElementById('ordersModal').style.display='none'">&times;</span>
+            <h2 id="ordersTitle">Заказы</h2>
+            <div id="ordersList"></div>
+        </div>
+    </div>
+
+    <script src="/js/theme.js?v=1778860579"></script>
+    <script src="/js/ui.js?v=1778860579"></script>
+    <script src="/js/auth.js?v=1778860579"></script>
+    <script src="/js/products.js?v=1778860579"></script>
+    <script src="/js/cart.js?v=1778860579"></script>
+    <script src="/js/admin.js?v=1778860579"></script>
+    <script src="/js/reviews.js?v=1778860579"></script>
+    <script src="/js/product-detail.js?v=1778860579"></script>
+    <script src="/js/orders.js?v=1778860579"></script>
+    <script src="/js/app.js?v=1778860579"></script>
+
+    <div id="cartPanel" class="slide-panel right">
+        <div class="slide-panel-header">
+            <h3>Корзина</h3>
+            <button class="close-slide" onclick="closeCartPanel()">×</button>
+        </div>
+        <div class="slide-panel-body" id="cartPanelContent"></div>
+        <div class="slide-panel-footer">
+            <button onclick="cartClear()">Очистить корзину</button>
+            <button onclick="cartCreateOrder()">Оформить заказ</button>
+        </div>
+    </div>
+
+    <div id="createCategoryModal" class="modal">
+        <div class="modal-content" style="max-width:400px;">
+            <span class="close" onclick="document.getElementById('createCategoryModal').style.display='none'">&times;</span>
+            <h2>Создать категорию</h2>
+            <label>Название: <input type="text" id="categoryName"></label>
+            <label>Родительская категория: <select id="categoryParent"></select></label>
+            <button onclick="createCategory()">Создать</button>
+            <div id="categoryStatus"></div>
+        </div>
+    </div>
+
+    <div id="adminSlidePanel" class="slide-panel left" style="width:50%;">
+        <div class="slide-panel-header">
+            <h3>Управление пользователями</h3>
+            <button class="close-slide" onclick="closeAdminPanel()">×</button>
+        </div>
+        <div class="slide-panel-body">
+            <div style="margin-bottom:10px;">
+                <input type="text" id="userSearch" placeholder="Поиск по имени или email..." style="padding:5px; width:100%;">
+                <select id="userRoleFilter" style="padding:5px; width:100%; margin-top:5px;">
+                    <option value="">Все роли</option>
+                    <option value="Customer">Покупатель</option>
+                    <option value="Seller">Продавец</option>
+                    <option value="Admin">Админ</option>
+                </select>
+                <button onclick="loadUsers()" style="margin-top:5px;">🔍 Применить</button>
+            </div>
+            <button onclick="openModal('registerModal')">➕ Добавить пользователя</button>
+            <button onclick="loadUsers()">🔄 Обновить</button>
+            <table id="adminUserTable">
+                <thead><tr><th>Имя</th><th>Email</th><th>Роль</th><th>Действие</th></tr></thead>
+                <tbody></tbody>
+            </table>
+        </div>
+        <div id="adminPanelResizer" style="position:absolute; top:0; right:0; width:5px; height:100%; cursor:ew-resize; background:transparent;"></div>
+    </div>
+
+    <div id="imageViewer" class="image-viewer" style="display:none;">
+        <span class="image-viewer-close" onclick="closeImageViewer()">&times;</span>
+        <div class="image-viewer-controls">
+            <button onclick="zoomImage(-0.2)">➖</button>
+            <button onclick="zoomImage(0.2)">➕</button>
+            <button onclick="resetZoom()">🔄</button>
+        </div>
+        <img id="imageViewerImg" src="" alt="Просмотр изображения" draggable="false" style="transform: scale(1); cursor: grab;">
+    </div>
+</body>
+</html>

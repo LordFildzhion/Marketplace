@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Marketplace — магазин</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <nav class="top-nav">
+        <div style="display:flex; gap:10px; align-items:center;">
+            <button onclick="navigateTo('catalog')">🏠 Каталог</button>
+            <button onclick="navigateTo('cart')" id="navCartBtn" class="hidden">🛒 Корзина</button>
+            <button onclick="navigateTo('orders')" id="navOrdersBtn" class="hidden">📦 Заказы</button>
+            <button onclick="navigateTo('auth')" id="navAuthBtn">🔑 Вход</button>
+            <button onclick="navigateTo('categories')" id="navCategoriesBtn" class="hidden">📁 Категории</button>
+            <button onclick="navigateTo('admin')" id="navAdminBtn" class="hidden">👥 Админ</button>
+        </div>
+        <div style="margin-left:auto; display:flex; gap:10px; align-items:center;">
+            <button id="themeSwitcher" onclick="toggleTheme()">🌓 Системная</button>
+            <button id="userInfo" class="hidden" onclick="navigateTo('profile')">Профиль</button>
+            <button onclick="logout()" id="navLogoutBtn" class="hidden">🚪 Выйти</button>
+        </div>
+    </nav>
+
+
+    <div id="page-catalog" class="page active">
+        <div style="display:flex; gap:10px; align-items:center; margin:10px 0;">
+            <button id="btnCreateProduct" class="hidden" onclick="openCreateProductModal()" style="background:#28a745; color:white;">➕ Создать товар</button>
+            <input type="text" id="searchQuery" placeholder="Поиск по названию..." style="padding:8px; width:200px;">
+            <select id="categoryFilter" style="padding:8px;">
+                <option value="">Все категории</option>
+            </select>
+            <button onclick="searchProducts()">🔍 Найти</button>
+            <button onclick="resetFilters()">🔄 Сбросить</button>
+        </div>
+        <div id="productContainer" class="product-grid"></div>
+        <div id="productListStatus"></div>
+    </div>
+
+
+    <div id="page-cart" class="page">
+        <h2>Корзина</h2>
+        <div id="cartPageContent"></div>
+    </div>
+
+    <div id="page-orders" class="page">
+        <h2>Мои заказы</h2>
+        <div id="ordersPageContent"></div>
+    </div>
+
+    <div id="page-auth" class="page">
+        <div style="display:flex; gap:20px; justify-content:center;">
+            <div>
+                <h2>Вход</h2>
+                <label>Email: <input type="email" id="loginEmail"></label><br>
+                <label>Пароль: <input type="password" id="loginPassword"></label><br>
+                <button onclick="login()">Войти</button>
+                <div id="loginStatus"></div>
+            </div>
+            <div>
+                <h2>Регистрация</h2>
+                <label>Имя: <input type="text" id="regFirstName"></label><br>
+                <label>Фамилия: <input type="text" id="regLastName"></label><br>
+                <label>Email: <input type="email" id="regEmail"></label><br>
+                <label>Пароль: <input type="password" id="regPassword"></label><br>
+                <label>Подтверждение: <input type="password" id="regConfirmPassword"></label><br>
+                <label>Роль: 
+                    <select id="regRoleSelect">
+                        <option value="Customer">Покупатель</option>
+                        <option value="Seller">Продавец</option>
+                    </select>
+                </label><br>
+                <button onclick="register()">Зарегистрироваться</button>
+                <div id="registerStatus"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="page-profile" class="page">
+        <h2>Профиль</h2>
+        <div id="profileContent"></div>
+    </div>
+
+    <div id="page-admin" class="page">
+        <h2>Управление пользователями</h2>
+        <table id="adminUserTable">
+            <thead><tr><th>Имя</th><th>Email</th><th>Роль</th><th>Действие</th></tr></thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
+    <div id="page-categories" class="page">
+        <h2>Управление категориями</h2>
+        <button onclick="openCreateCategoryModal()">➕ Создать категорию</button>
+        <table id="categoryTable">
+            <thead><tr><th>Название</th><th>Slug</th><th>Действия</th></tr></thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
+    <div id="productDetailModal" class="modal">
+        <div class="modal-content" style="max-width:800px; display:flex; overflow:hidden; padding:0;">
+            <div id="detailMain" style="flex:1; padding:20px; min-width:0;">
+                <span class="close" onclick="document.getElementById('productDetailModal').style.display='none'">&times;</span>
+                <h2 id="detailTitle"></h2>
+                <div id="detailImages" style="margin:10px 0;"></div>
+                <p><strong>Категория:</strong> <span id="detailCategory"></span></p>
+                <p><strong>Цена:</strong> <span id="detailPrice"></span></p>
+                <p><strong>Остаток:</strong> <span id="detailStock"></span></p>
+                <p><strong>Описание:</strong> <span id="detailDescription"></span></p>
+                <div id="detailActions" style="margin-top:15px;"></div>
+            </div>
+            <div id="detailReviewsPanel" style="width:320px; background: var(--modal-bg); border-left:1px solid var(--table-border); padding:20px; display:none; flex-direction:column; overflow-y:auto;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                    <h3 style="margin:0;">Отзывы</h3>
+                    <button onclick="closeDetailReviews()" style="background:none; border:none; font-size:20px; cursor:pointer; color: var(--text-color);">&times;</button>
+                </div>
+                <div id="detailReviewsContent" style="flex:1; margin-bottom:10px;"></div>
+                <div>
+                    <label style="display:block; margin-bottom:5px;">Рейтинг (1-5):
+                        <input type="number" id="detailReviewRating" min="1" max="5" value="5" style="width:60px; margin-left:5px;">
+                    </label>
+                    <textarea id="detailReviewComment" placeholder="Ваш отзыв..." style="width:100%; height:60px; margin-bottom:5px;"></textarea>
+                    <label>Фото: <input type="file" id="reviewImages" multiple accept="image/*"></label>
+                    <button onclick="submitDetailReview()">Отправить</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="createProductModal" class="modal">
+        <div class="modal-content" style="max-width:500px;">
+            <span class="close" onclick="document.getElementById('createProductModal').style.display='none'">&times;</span>
+            <h2>Создать товар</h2>
+            <button type="button" onclick="openCreateCategoryModal()" style="margin-bottom:10px;">➕ Создать категорию</button>
+            <label>Название: <input type="text" id="modalTitle" placeholder="Название товара"></label>
+            <label>Описание: <textarea id="modalDescription" placeholder="Описание"></textarea></label>
+            <label>Цена: <input type="number" id="modalPrice" step="0.01" placeholder="Цена"></label>
+            <label>Остаток: <input type="number" id="modalStock" placeholder="Количество"></label>
+            <label>Категория: <select id="modalCategorySelect"></select></label>
+            <label>Фотографии: <input type="file" id="modalImageFiles" multiple accept="image/*" onchange="previewModalImages()"></label>
+            <div id="modalImagePreview" style="display:flex; gap:5px; flex-wrap:wrap; margin:5px 0;"></div>
+            <button onclick="createProductFromModal()">Создать</button>
+            <div id="modalProductStatus"></div>
+        </div>
+    </div>
+
+    <div id="createCategoryModal" class="modal">
+        <div class="modal-content" style="max-width:400px;">
+            <span class="close" onclick="document.getElementById('createCategoryModal').style.display='none'">&times;</span>
+            <h2>Создать категорию</h2>
+            <label>Название: <input type="text" id="categoryName"></label>
+            <label>Родительская категория: <select id="categoryParent"></select></label>
+            <button onclick="createCategory()">Создать</button>
+            <div id="categoryStatus"></div>
+        </div>
+    </div>
+
+    <div id="imageViewer" class="image-viewer" style="display:none;">
+        <span class="image-viewer-close" onclick="closeImageViewer()">&times;</span>
+        <div class="image-viewer-controls">
+            <button onclick="zoomImage(-0.2)">➖</button>
+            <button onclick="zoomImage(0.2)">➕</button>
+            <button onclick="resetZoom()">🔄</button>
+        </div>
+        <img id="imageViewerImg" src="" alt="Просмотр изображения" draggable="false" style="transform: scale(1); cursor: grab;">
+    </div>
+
+    <script src="/js/theme.js?v=1778897290"></script>
+    <script src="/js/ui.js?v=1778897290"></script>
+    <script src="/js/auth.js?v=1778897290"></script>
+    <script src="/js/cart.js?v=1778897290"></script>
+    <script src="/js/products.js?v=1778897290"></script>
+    <script src="/js/admin.js?v=1778897290"></script>
+    <script src="/js/reviews.js?v=1778897290"></script>
+    <script src="/js/product-detail.js?v=1778897290"></script>
+    <script src="/js/orders.js?v=1778897290"></script>
+    <script src="/js/profile.js?v=1778897290"></script>
+    <script src="/js/app.js?v=1778897290"></script>
+</body>
+</html>
