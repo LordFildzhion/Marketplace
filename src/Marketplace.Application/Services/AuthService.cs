@@ -18,18 +18,21 @@ public class AuthService : IAuthService
     private readonly IJwtTokenGenerator _jwtTokenGenerator;
     private readonly IMapper _mapper;
     private readonly ILogger<AuthService> _logger;
+        private readonly IMessageBus _authMessageBus;
 
     public AuthService(
         IUserRepository userRepository,
         IPasswordHasher passwordHasher,
         IJwtTokenGenerator jwtTokenGenerator,
         IMapper mapper,
+            IMessageBus messageBus,
         ILogger<AuthService> logger)
     {
         _userRepository = userRepository;
         _passwordHasher = passwordHasher;
         _jwtTokenGenerator = jwtTokenGenerator;
         _mapper = mapper;
+            _authMessageBus = messageBus;
         _logger = logger;
     }
 
@@ -47,6 +50,7 @@ public class AuthService : IAuthService
         var user = new User(email, passwordHash, request.FirstName, request.LastName, role);
         await _userRepository.AddAsync(user, ct);
         await _userRepository.SaveChangesAsync(ct);
+            _authMessageBus.Publish("user.registered", $"User {user.Id} registered with email {request.Email}");
 
         _logger.LogInformation("User {Email} registered with role {Role}", request.Email, user.Role);
         return CreateAuthResponse(user);
@@ -62,6 +66,7 @@ public class AuthService : IAuthService
             throw new UnauthorizedException("Your seller account is not yet approved by administrator.");
 
         _logger.LogInformation("User {Email} logged in", request.Email);
+            _authMessageBus.Publish("user.loggedin", $"User {user.Id} logged in");
         return CreateAuthResponse(user);
     }
 

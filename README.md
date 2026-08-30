@@ -7,8 +7,9 @@ API должно поддерживать каталог товаров, фун�
 Документация API — Swagger/OpenAPI.
 
 ### 2. Технологический стек
-- C#, .NET 8.0 (LTS)
+- C#, .NET 8 (LTS)
 - PostgreSQL + EF Core (code-first)
+- RabbitMQ (брокер сообщений)
 - Serilog (логирование)
 - Polly (resilience)
 - Swagger / Swashbuckle
@@ -22,15 +23,32 @@ API должно поддерживать каталог товаров, фун�
 - JWT-аутентификация
 - Регистрация/вход, профиль пользователя
 
+![alt text](docs/screenshots/Auth_screen.png)
+
 #### Каталог товаров
 - CRUD для товаров и категорий
 - Атрибуты (jsonb), изображения, вариации
 - Поиск/фильтрация (ILIKE, jsonb)
 
+![alt text](docs/screenshots/Catalog_screen.png)
+
 #### Корзина и заказы
 - Корзина (персистентная для Customer)
 - Оформление заказа
 - Жизненный цикл заказа: New → Paid → InProgress → Shipped → Delivered → Cancelled
+
+![alt text](docs/screenshots/Cart_screen.png)
+
+![alt text](docs/screenshots/Orders_screen.png)
+
+#### Асинхронные события (RabbitMQ)
+- Публикация событий при создании/обновлении/удалении товара (`product.created`, `product.updated`, `product.deleted`)
+- События регистрации и входа пользователя (`user.registered`, `user.loggedin`)
+- События создания отзыва и ответа на него (`review.created`, `review.response.added`)
+- События жизненного цикла заказа (`order.created`, `order.status.changed`)
+- Фоновые потребители (BackgroundService) логируют полученные сообщения
+- Взаимодействие через интерфейс `IMessageBus` и реализацию `RabbitMqMessageBus`
+
 
 #### Оплата
 - Интерфейс `IExternalPaymentGateway`
@@ -41,11 +59,13 @@ API должно поддерживать каталог товаров, фун�
 - CRUD отзывов
 - Модерация админом
 
+![alt text](docs/screenshots/Reviews_screen.png)
+
 #### Склад
 - Управление остатками
 - BackgroundService (low stock notification)
 
-### 4. Архитектура (Onion)
+### 4. Архитектура (Clean)
 1. **Domain/Core** — сущности, value objects, интерфейсы репозиториев  
 2. **Application** — use cases, DTO, сервисы бизнес-логики  
 3. **Infrastructure** — EF Core, внешние сервисы, хранилище файлов  
@@ -63,25 +83,19 @@ API должно поддерживать каталог товаров, фун�
 
 ### 6. API (примеры эндпоинтов)
 #### Пользователи
-- POST /api/auth/register
-- POST /api/auth/login
+![alt text](docs/screenshots/Auth_API.png)
 
 #### Товары
-- GET /api/products?page=1&size=20
-- GET /api/products/{id}
-- POST /api/products
+![alt text](docs/screenshots/Products_API.png)
 
 #### Корзина/Заказы
-- GET /api/cart
-- POST /api/cart
-- POST /api/orders
+![alt text](docs/screenshots/Cart_API.png)
 
 #### Оплата
-- POST /api/payments/{orderId}/pay
+![alt text](docs/screenshots/Payments_API.png)
 
 #### Отзывы
-- POST /api/products/{id}/reviews
-- GET /api/products/{id}/reviews
+![alt text](docs/screenshots/Reviews_API.png)
 
 ### 7. Нефункциональные требования
 - Async/await
@@ -90,6 +104,7 @@ API должно поддерживать каталог товаров, фун�
 - Логирование Serilog (correlationId, userId, requestPath)
 - Тесты: Unit (xUnit), Integration (TestServer/Postgres docker)
 - Dockerfile + docker-compose.yml
+- Асинхронная обработка событий через RabbitMQ
 
 ### 8. CI/CD
 - GitHub Actions: build → test → docker build → миграции

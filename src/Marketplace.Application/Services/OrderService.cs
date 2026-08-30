@@ -16,19 +16,22 @@ public class OrderService : IOrderService
     private readonly IProductRepository _productRepository;
     private readonly IMapper _mapper;
     private readonly ILogger<OrderService> _logger;
+    private readonly IMessageBus _messageBus;
 
     public OrderService(
         IOrderRepository orderRepository,
         ICartRepository cartRepository,
         IProductRepository productRepository,
         IMapper mapper,
-        ILogger<OrderService> logger)
+        ILogger<OrderService> logger,
+        IMessageBus messageBus)
     {
         _orderRepository = orderRepository;
         _cartRepository = cartRepository;
         _productRepository = productRepository;
         _mapper = mapper;
         _logger = logger;
+        _messageBus = messageBus;
     }
 
     public async Task<OrderDto> CreateOrderFromCartAsync(Guid userId, CancellationToken ct = default)
@@ -56,6 +59,7 @@ public class OrderService : IOrderService
         await _cartRepository.ClearCartAsync(userId, ct);
         await _orderRepository.SaveChangesAsync(ct);
 
+        _messageBus.Publish("order.created", $"Order {order.Id} created for user {userId}");
         return _mapper.Map<OrderDto>(order);
     }
 
@@ -75,17 +79,6 @@ public class OrderService : IOrderService
     public async Task<IReadOnlyList<OrderDto>> GetSellerOrdersAsync(Guid sellerId, CancellationToken ct = default)
     {
         var orders = await _orderRepository.GetOrdersBySellerAsync(sellerId, 1, 50, ct);
-        foreach (var order in orders)
-        {
-            var filteredItems = order.Items.Where(i => i.Product?.SellerId == sellerId).ToList();
-            var itemsField = typeof(Order).GetField("_items", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            if (itemsField != null)
-            {
-                var list = itemsField.GetValue(order) as List<OrderItem>;
-                list.Clear();
-                list.AddRange(filteredItems);
-            }
-        }
         return _mapper.Map<List<OrderDto>>(orders);
     }
 
@@ -109,6 +102,7 @@ public class OrderService : IOrderService
         order.SetStatus(status);
         await _orderRepository.UpdateAsync(order, ct);
         await _orderRepository.SaveChangesAsync(ct);
+        _messageBus.Publish("order.status.changed", $"Order {order.Id} status changed to {newStatus} (by user {userId})");
         return _mapper.Map<OrderDto>(order);
     }
 }

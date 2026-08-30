@@ -1,3 +1,4 @@
+using Marketplace.Infrastructure.Messaging;
 using Marketplace.Application.Interfaces;
 using Marketplace.Application.Services;
 using Marketplace.Domain.Interfaces;
@@ -43,11 +44,21 @@ public static class ServiceCollectionExtensions
         services.AddScoped<CurrentUserService>();
 
         services.AddScoped<IFileStorageService, LocalFileStorageService>();
+            services.AddSingleton<IMessageBus, RabbitMqMessageBus>();
 
         services.AddScoped<AuditLogger>();
 
         services.AddHostedService<LowStockNotificationService>();
         services.AddHostedService<OrderProcessingService>();
+            services.AddHostedService<OrderCreatedConsumer>();
+            services.AddHostedService<order_status_changedConsumer>();
+            services.AddHostedService<user_loggedinConsumer>();
+            services.AddHostedService<user_registeredConsumer>();
+            services.AddHostedService<review_response_addedConsumer>();
+            services.AddHostedService<review_createdConsumer>();
+            services.AddHostedService<product_deletedConsumer>();
+            services.AddHostedService<product_updatedConsumer>();
+            services.AddHostedService<product_createdConsumer>();
 
         return services;
     }
