@@ -20,15 +20,6 @@ public class AppDbContext : DbContext
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 
-    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-    {
-        if (!optionsBuilder.IsConfigured)
-        {
-            optionsBuilder.UseNpgsql("Host=localhost;Database=marketplace_dev;Username=postgres;Password=postgres");
-        }
-        optionsBuilder.EnableSensitiveDataLogging();
-    }
-
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

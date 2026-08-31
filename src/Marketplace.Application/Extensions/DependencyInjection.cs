@@ -1,5 +1,7 @@
 using System.Reflection;
+using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
+
 using Marketplace.Application.Interfaces;
 using Marketplace.Application.Services;
 
@@ -7,17 +9,27 @@ namespace Marketplace.Application.Extensions;
 
 public static class DependencyInjection
 {
-    public static IServiceCollection AddApplication(this IServiceCollection services)
+    public static IServiceCollection AddApplication(
+        this IServiceCollection services)
     {
-        services.AddAutoMapper(Assembly.GetExecutingAssembly());
-        services.AddScoped<IAuthService, AuthService>();
+        // Application services
         services.AddScoped<IProductService, ProductService>();
-        services.AddScoped<ICategoryService, CategoryService>();
-        services.AddScoped<ICartService, CartService>();
         services.AddScoped<IOrderService, OrderService>();
-        services.AddScoped<IPaymentService, PaymentService>();
+        services.AddScoped<ICartService, CartService>();
+        services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IReviewService, ReviewService>();
+        services.AddScoped<ICategoryService, CategoryService>();
         services.AddScoped<IUserService, UserService>();
+        services.AddScoped<IPaymentService, PaymentService>();
+
+        // Validators
+        services.AddValidatorsFromAssembly(
+            Assembly.GetExecutingAssembly());
+
+        // AutoMapper
+        services.AddAutoMapper(
+            Assembly.GetExecutingAssembly());
+
         return services;
     }
 }

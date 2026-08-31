@@ -1,0 +1,92 @@
+name: CI/CD
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+    branches:
+      - main
+      - master
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Build and Test
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_DB: marketplace_dev
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d marketplace_dev"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+      rabbitmq:
+        image: rabbitmq:3-management-alpine
+        env:
+          RABBITMQ_DEFAULT_USER: guest
+          RABBITMQ_DEFAULT_PASS: guest
+        ports:
+          - 5672:5672
+          - 15672:15672
+        options: >-
+          --health-cmd "rabbitmq-diagnostics -q ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore
+        run: dotnet restore Marketplace.sln
+
+      - name: Build
+        run: dotnet build Marketplace.sln --configuration Release --no-restore
+
+      - name: Run tests
+        env:
+          ASPNETCORE_ENVIRONMENT: Development
+          ConnectionStrings__DefaultConnection: Host=localhost;Port=5432;Database=marketplace_dev;Username=postgres;Password=postgres
+          RabbitMQ__HostName: localhost
+          RabbitMQ__Port: 5672
+          RabbitMQ__UserName: guest
+          RabbitMQ__Password: guest
+        run: dotnet test Marketplace.sln --configuration Release --no-build --logger "trx;LogFileName=test-results.trx"
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: '**/TestResults/*.trx'
+
+  docker:
+    name: Build Docker Image
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker build -t marketplace-api:${{ github.sha }} .

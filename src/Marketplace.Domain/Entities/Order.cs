@@ -1,5 +1,6 @@
 using Marketplace.Domain.Common;
 using Marketplace.Domain.Enums;
+using Marketplace.Domain.Events;
 using Marketplace.Domain.ValueObjects;
 
 namespace Marketplace.Domain.Entities;
@@ -10,18 +11,17 @@ public class Order : BaseEntity, IAggregateRoot
     public IReadOnlyCollection<IDomainEvent> DomainEvents => _domainEvents.AsReadOnly();
 
     public Guid UserId { get; private set; }
-    public User User { get; private set; } = null!;
+    public User User { get; private set; }
     public OrderStatus Status { get; private set; } = OrderStatus.New;
     public DateTime OrderDate { get; private set; } = DateTime.UtcNow;
-    public Money TotalAmount { get; private set; } = null!;
+    public Money TotalAmount { get; private set; }
     public Address? ShippingAddress { get; private set; }
-
     public long UserOrderNumber { get; private set; }
 
     private readonly List<OrderItem> _items = new();
     public IReadOnlyCollection<OrderItem> Items => _items.AsReadOnly();
 
-    private Order() { } // for EF Core
+    private Order() { }
 
     public Order(Guid userId)
     {
@@ -29,11 +29,7 @@ public class Order : BaseEntity, IAggregateRoot
         TotalAmount = new Money(0, "USD");
     }
 
-    public void SetUserOrderNumber(long number)
-    {
-        if (number <= 0) throw new ArgumentException("UserOrderNumber must be positive");
-        UserOrderNumber = number;
-    }
+    public void SetUserOrderNumber(long number) => UserOrderNumber = number;
 
     public void AddItem(Guid productId, string productTitle, Money unitPrice, int quantity)
     {
@@ -42,23 +38,15 @@ public class Order : BaseEntity, IAggregateRoot
 
         var existing = _items.FirstOrDefault(i => i.ProductId == productId);
         if (existing != null)
-        {
             existing.UpdateQuantity(existing.Quantity + quantity);
-        }
         else
-        {
-            var newItem = new OrderItem(Id, productId, productTitle, unitPrice, quantity);
-            newItem.Order = this;   // <-- устанавливаем обратную навигацию
-            _items.Add(newItem);
-        }
+            _items.Add(new OrderItem(Id, productId, productTitle, unitPrice, quantity));
+
         RecalculateTotal();
     }
 
     public void RemoveItem(Guid productId)
     {
-        if (Status != OrderStatus.New)
-            throw new InvalidOperationException("Cannot modify items after order is processed");
-
         var item = _items.FirstOrDefault(i => i.ProductId == productId);
         if (item != null)
         {
@@ -81,15 +69,24 @@ public class Order : BaseEntity, IAggregateRoot
     {
         if (!AllowedTransitions.TryGetValue(Status, out var allowed) || !allowed.Contains(newStatus))
             throw new InvalidOperationException($"Cannot transition from {Status} to {newStatus}.");
-
         Status = newStatus;
     }
 
-    public void MarkAsPaid() => SetStatus(OrderStatus.Paid);
+    public void MarkAsPaid()
+    {
+        SetStatus(OrderStatus.Paid);
+        _domainEvents.Add(new OrderPaidEvent(Id, UserId));
+    }
+
     public void StartProcessing() => SetStatus(OrderStatus.InProgress);
     public void Ship() => SetStatus(OrderStatus.Shipped);
     public void MarkAsDelivered() => SetStatus(OrderStatus.Delivered);
-    public void Cancel() => SetStatus(OrderStatus.Cancelled);
+
+    public void Cancel(string reason = "Отменён")
+    {
+        SetStatus(OrderStatus.Cancelled);
+        _domainEvents.Add(new OrderCancelledEvent(Id, UserId, reason));
+    }
 
     public void ClearDomainEvents() => _domainEvents.Clear();
 

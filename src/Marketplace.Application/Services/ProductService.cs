@@ -16,20 +16,17 @@ public class ProductService : IProductService
     private readonly ICategoryRepository _categoryRepository;
     private readonly IMapper _mapper;
     private readonly ILogger<ProductService> _logger;
-    private readonly IMessageBus _messageBus;
 
     public ProductService(
         IProductRepository productRepository,
         ICategoryRepository categoryRepository,
         IMapper mapper,
-        ILogger<ProductService> logger,
-        IMessageBus messageBus)
+        ILogger<ProductService> logger)
     {
         _productRepository = productRepository;
         _categoryRepository = categoryRepository;
         _mapper = mapper;
         _logger = logger;
-        _messageBus = messageBus;
     }
 
     public async Task<ProductDto?> GetProductByIdAsync(Guid id, CancellationToken ct = default)
@@ -57,7 +54,6 @@ public class ProductService : IProductService
         var product = new Product(sku, request.Title, request.Description, price, request.Stock, request.CategoryId, sellerId);
         await _productRepository.AddAsync(product, ct);
         await _productRepository.SaveChangesAsync(ct);
-        _messageBus.Publish("product.created", $"Product {product.Id} created by seller {sellerId}");
         return _mapper.Map<ProductDto>(product);
     }
 
@@ -77,7 +73,6 @@ public class ProductService : IProductService
         if (request.CategoryId.HasValue)
             product.ChangeCategory(request.CategoryId.Value);
         await _productRepository.SaveChangesAsync(ct);
-        _messageBus.Publish("product.updated", $"Product {id} updated");
         return _mapper.Map<ProductDto>(product);
     }
 
@@ -89,7 +84,6 @@ public class ProductService : IProductService
             throw new ForbiddenException("You can only delete your own products.");
         await _productRepository.DeleteAsync(product, ct);
         await _productRepository.SaveChangesAsync(ct);
-        _messageBus.Publish("product.deleted", $"Product {id} deleted");
     }
 
     public async Task<Guid> AddProductImageAsync(Guid productId, string imageUrl, CancellationToken ct = default)

@@ -8,8 +8,6 @@ COPY ["src/Marketplace.Application/Marketplace.Application.csproj", "Marketplace
 COPY ["src/Marketplace.Domain/Marketplace.Domain.csproj", "Marketplace.Domain/"]
 COPY ["src/Marketplace.Infrastructure/Marketplace.Infrastructure.csproj", "Marketplace.Infrastructure/"]
 
-
-RUN dotnet nuget locals all --clear
 RUN dotnet nuget locals all --clear
 RUN dotnet restore "Marketplace.Web/Marketplace.Web.csproj" \
     --disable-parallel false \

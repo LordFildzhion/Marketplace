@@ -1,4 +1,5 @@
 using Marketplace.Domain.Common;
+using Marketplace.Domain.Events;
 using Marketplace.Domain.ValueObjects;
 
 namespace Marketplace.Domain.Entities;
@@ -8,18 +9,18 @@ public class Product : BaseEntity, IAggregateRoot
     private readonly List<IDomainEvent> _domainEvents = new();
     public IReadOnlyCollection<IDomainEvent> DomainEvents => _domainEvents.AsReadOnly();
 
-    public Sku Sku { get; private set; } = null!;
-    public string Title { get; private set; } = null!;
-    public string Description { get; private set; } = null!;
-    public Money Price { get; private set; } = null!;
+    public Sku Sku { get; private set; }
+    public string Title { get; private set; }
+    public string Description { get; private set; }
+    public Money Price { get; private set; }
     public Money? DiscountPrice { get; private set; }
     public int Stock { get; private set; }
     public bool IsActive { get; private set; } = true;
     public string AttributesJson { get; private set; } = "{}";
     public Guid CategoryId { get; private set; }
-    public Category Category { get; private set; } = null!;
+    public Category Category { get; private set; }
     public Guid SellerId { get; private set; }
-    public User Seller { get; private set; } = null!;
+    public User Seller { get; private set; }
 
     private readonly List<ProductImage> _images = new();
     public IReadOnlyCollection<ProductImage> Images => _images.AsReadOnly();
@@ -31,28 +32,24 @@ public class Product : BaseEntity, IAggregateRoot
 
     public Product(Sku sku, string title, string description, Money price, int stock, Guid categoryId, Guid sellerId)
     {
-        Sku = sku ?? throw new ArgumentNullException(nameof(sku));
-        Title = title ?? throw new ArgumentNullException(nameof(title));
-        Description = description ?? throw new ArgumentNullException(nameof(description));
-        Price = price ?? throw new ArgumentNullException(nameof(price));
-        Stock = stock >= 0 ? stock : throw new ArgumentException("Stock cannot be negative");
+        Sku = sku;
+        Title = title;
+        Description = description;
+        Price = price;
+        Stock = stock;
         CategoryId = categoryId;
         SellerId = sellerId;
+        _domainEvents.Add(new ProductCreatedEvent(Id, sellerId, title));
     }
 
     public void UpdateInfo(string title, string description, Money? price = null)
     {
-        Title = title ?? throw new ArgumentNullException(nameof(title));
-        Description = description ?? throw new ArgumentNullException(nameof(description));
+        Title = title;
+        Description = description;
         if (price != null) Price = price;
     }
 
-    public void ChangeCategory(Guid categoryId)
-    {
-        CategoryId = categoryId;
-        Category = null!; // сбросим навигационное свойство, чтобы EF загрузил при необходимости
-    }
-
+    public void ChangeCategory(Guid categoryId) => CategoryId = categoryId;
     public void ChangeStock(int newStock) => Stock = newStock;
     public void Activate() => IsActive = true;
     public void Deactivate() => IsActive = false;

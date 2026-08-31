@@ -5,42 +5,48 @@ using RabbitMQ.Client;
 
 namespace Marketplace.Infrastructure.Messaging;
 
-public class RabbitMqMessageBus : IMessageBus, IDisposable
+public sealed class RabbitMqMessageBus : IMessageBus
 {
-    private readonly IConnection _connection;
-    private readonly IModel _channel;
+    private readonly IConfiguration _configuration;
 
     public RabbitMqMessageBus(IConfiguration configuration)
     {
-        var factory = new ConnectionFactory
-        {
-            HostName = configuration["RabbitMQ:HostName"] ?? "localhost",
-            Port = int.Parse(configuration["RabbitMQ:Port"] ?? "5672"),
-            UserName = configuration["RabbitMQ:UserName"] ?? "guest",
-            Password = configuration["RabbitMQ:Password"] ?? "guest"
-        };
-        _connection = factory.CreateConnection();
-        _channel = _connection.CreateModel();
+        _configuration = configuration;
     }
 
     public void Publish(string queueName, string message)
     {
-        _channel.QueueDeclare(queue: queueName,
-                             durable: false,
-                             exclusive: false,
-                             autoDelete: false,
-                             arguments: null);
+        var hostName = _configuration["RabbitMQ:HostName"] ?? "localhost";
+        var port = int.TryParse(_configuration["RabbitMQ:Port"], out var parsedPort)
+            ? parsedPort
+            : 5672;
+        var userName = _configuration["RabbitMQ:UserName"] ?? "guest";
+        var password = _configuration["RabbitMQ:Password"] ?? "guest";
+
+        var factory = new ConnectionFactory
+        {
+            HostName = hostName,
+            Port = port,
+            UserName = userName,
+            Password = password
+        };
+
+        using var connection = factory.CreateConnection();
+        using var channel = connection.CreateModel();
+
+        channel.QueueDeclare(
+            queue: queueName,
+            durable: true,
+            exclusive: false,
+            autoDelete: false,
+            arguments: null);
 
         var body = Encoding.UTF8.GetBytes(message);
-        _channel.BasicPublish(exchange: "",
-                             routingKey: queueName,
-                             basicProperties: null,
-                             body: body);
-    }
 
-    public void Dispose()
-    {
-        _channel.Close();
-        _connection.Close();
+        channel.BasicPublish(
+            exchange: string.Empty,
+            routingKey: queueName,
+            basicProperties: null,
+            body: body);
     }
 }

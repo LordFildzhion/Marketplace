@@ -50,8 +50,9 @@ public class AuthService : IAuthService
         var user = new User(email, passwordHash, request.FirstName, request.LastName, role);
         await _userRepository.AddAsync(user, ct);
         await _userRepository.SaveChangesAsync(ct);
-            _authMessageBus.Publish("user.registered", $"User {user.Id} registered with email {request.Email}");
-
+        _authMessageBus.Publish(
+            "user.registered",
+            $"User {user.Id} registered with email {user.Email.Value}");
         _logger.LogInformation("User {Email} registered with role {Role}", request.Email, user.Role);
         return CreateAuthResponse(user);
     }

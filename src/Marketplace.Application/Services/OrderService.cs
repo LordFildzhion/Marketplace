@@ -16,22 +16,19 @@ public class OrderService : IOrderService
     private readonly IProductRepository _productRepository;
     private readonly IMapper _mapper;
     private readonly ILogger<OrderService> _logger;
-    private readonly IMessageBus _messageBus;
 
     public OrderService(
         IOrderRepository orderRepository,
         ICartRepository cartRepository,
         IProductRepository productRepository,
         IMapper mapper,
-        ILogger<OrderService> logger,
-        IMessageBus messageBus)
+        ILogger<OrderService> logger)
     {
         _orderRepository = orderRepository;
         _cartRepository = cartRepository;
         _productRepository = productRepository;
         _mapper = mapper;
         _logger = logger;
-        _messageBus = messageBus;
     }
 
     public async Task<OrderDto> CreateOrderFromCartAsync(Guid userId, CancellationToken ct = default)
@@ -59,7 +56,6 @@ public class OrderService : IOrderService
         await _cartRepository.ClearCartAsync(userId, ct);
         await _orderRepository.SaveChangesAsync(ct);
 
-        _messageBus.Publish("order.created", $"Order {order.Id} created for user {userId}");
         return _mapper.Map<OrderDto>(order);
     }
 
@@ -102,7 +98,6 @@ public class OrderService : IOrderService
         order.SetStatus(status);
         await _orderRepository.UpdateAsync(order, ct);
         await _orderRepository.SaveChangesAsync(ct);
-        _messageBus.Publish("order.status.changed", $"Order {order.Id} status changed to {newStatus} (by user {userId})");
         return _mapper.Map<OrderDto>(order);
     }
 }

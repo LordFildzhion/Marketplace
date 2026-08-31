@@ -9,9 +9,7 @@ API должно поддерживать каталог товаров, фун�
 ### 2. Технологический стек
 - C#, .NET 8 (LTS)
 - PostgreSQL + EF Core (code-first)
-- RabbitMQ (брокер сообщений)
 - Serilog (логирование)
-- Polly (resilience)
 - Swagger / Swashbuckle
 - XUnit (тесты)
 - Docker / Docker Compose
@@ -41,7 +39,6 @@ API должно поддерживать каталог товаров, фун�
 
 ![alt text](docs/screenshots/Orders_screen.png)
 
-#### Асинхронные события (RabbitMQ)
 - Публикация событий при создании/обновлении/удалении товара (`product.created`, `product.updated`, `product.deleted`)
 - События регистрации и входа пользователя (`user.registered`, `user.loggedin`)
 - События создания отзыва и ответа на него (`review.created`, `review.response.added`)
@@ -53,7 +50,6 @@ API должно поддерживать каталог товаров, фун�
 #### Оплата
 - Интерфейс `IExternalPaymentGateway`
 - Реализация — mock/stub
-- Polly (retry, circuit breaker)
 
 #### Отзывы и оценки
 - CRUD отзывов
@@ -104,7 +100,6 @@ API должно поддерживать каталог товаров, фун�
 - Логирование Serilog (correlationId, userId, requestPath)
 - Тесты: Unit (xUnit), Integration (TestServer/Postgres docker)
 - Dockerfile + docker-compose.yml
-- Асинхронная обработка событий через RabbitMQ
 
 ### 8. CI/CD
 - GitHub Actions: build → test → docker build → миграции

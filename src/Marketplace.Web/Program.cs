@@ -14,7 +14,6 @@ builder.Host.UseSerilog((ctx, lc) => lc
     .Enrich.WithProperty("Application", "Marketplace")
     .WriteTo.Console());
 
-
 builder.Services.AddInfrastructure(builder.Configuration);
 
 builder.Services.AddApplication();

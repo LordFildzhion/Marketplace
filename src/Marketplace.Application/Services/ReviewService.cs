@@ -17,22 +17,19 @@ public class ReviewService : IReviewService
     private readonly IFileStorageService _fileStorage;
     private readonly IMapper _mapper;
     private readonly ILogger<ReviewService> _logger;
-    private readonly IMessageBus _messageBus;
 
     public ReviewService(
         IReviewRepository reviewRepository,
         IProductRepository productRepository,
         IFileStorageService fileStorage,
         IMapper mapper,
-        ILogger<ReviewService> logger,
-        IMessageBus messageBus)
+        ILogger<ReviewService> logger)
     {
         _reviewRepository = reviewRepository;
         _productRepository = productRepository;
         _fileStorage = fileStorage;
         _mapper = mapper;
         _logger = logger;
-        _messageBus = messageBus;
     }
 
     public async Task<ReviewDto> CreateReviewAsync(Guid productId, Guid userId, int rating, string comment,
@@ -61,7 +58,6 @@ public class ReviewService : IReviewService
 
         await _reviewRepository.AddAsync(review, ct);
         await _reviewRepository.SaveChangesAsync(ct);
-        _messageBus.Publish("review.created", $"Review {review.Id} created for product {productId}");
         return _mapper.Map<ReviewDto>(review);
     }
 
@@ -93,16 +89,6 @@ public class ReviewService : IReviewService
         await _reviewRepository.SaveChangesAsync(ct);
     }
 
-    public async Task<ReviewDto> ApproveReviewAsync(Guid reviewId, CancellationToken ct = default)
-    {
-        var review = await _reviewRepository.GetByIdAsync(reviewId, ct);
-        if (review == null) throw new NotFoundException("Review", reviewId);
-        // Approve method is not implemented, skipping
-        await _reviewRepository.UpdateAsync(review, ct);
-        await _reviewRepository.SaveChangesAsync(ct);
-        return _mapper.Map<ReviewDto>(review);
-    }
-
     public async Task<ReviewDto> RespondToReviewAsync(Guid reviewId, Guid userId, string response, CancellationToken ct = default)
     {
         var review = await _reviewRepository.GetByIdAsync(reviewId, ct);
@@ -110,7 +96,6 @@ public class ReviewService : IReviewService
         review.AddResponse(response, userId);
         await _reviewRepository.UpdateAsync(review, ct);
         await _reviewRepository.SaveChangesAsync(ct);
-        _messageBus.Publish("review.response.added", $"Response added to review {reviewId}");
         return _mapper.Map<ReviewDto>(review);
     }
 
