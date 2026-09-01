@@ -1,4 +1,5 @@
 using AutoMapper;
+using Marketplace.Application.Common.Enums;
 using Marketplace.Application.Common.Exceptions;
 using Marketplace.Application.DTOs.Orders;
 using Marketplace.Application.Interfaces;
@@ -34,7 +35,7 @@ public class OrderService : IOrderService
     public async Task<OrderDto> CreateOrderFromCartAsync(Guid userId, CancellationToken ct = default)
     {
         var cartItems = await _cartRepository.GetCartItemsByUserAsync(userId, ct);
-        if (!cartItems.Any()) throw new AppException("Cart is empty");
+        if (!cartItems.Any()) throw new ValidationException("Cart is empty", "Cart is empty.");
 
         var order = new Order(userId);
         foreach (var item in cartItems)
@@ -84,20 +85,32 @@ public class OrderService : IOrderService
         return _mapper.Map<List<OrderDto>>(orders);
     }
 
-    public async Task<OrderDto> UpdateOrderStatusAsync(Guid orderId, string newStatus, Guid userId, bool isAdmin, CancellationToken ct = default)
+    public async Task<OrderDto> UpdateOrderStatusAsync(Guid orderId, OrderStatus newStatus, Guid userId, bool isAdmin, CancellationToken ct = default)
     {
         var order = await _orderRepository.GetByIdAsync(orderId, ct);
-        if (order == null) throw new NotFoundException("Order", orderId);
+
+        if (order == null)
+        {
+            throw new NotFoundException("Order", orderId);
+        }
 
         if (!isAdmin && order.UserId != userId)
-            throw new ForbiddenException("You can only update status of your own orders.");
+        {
+            throw new ForbiddenException(
+                "You can only update status of your own orders.");
+        }
 
-        if (!Enum.TryParse<OrderStatus>(newStatus, true, out var status))
-            throw new ValidationException("status", $"Invalid status: {newStatus}");
+        if (!Enum.IsDefined(typeof(OrderStatus), newStatus))
+        {
+            throw new ValidationException(
+                "status",
+                $"Invalid order status: {newStatus}.");
+        }
+        order.SetStatus(newStatus);
 
-        order.SetStatus(status);
         await _orderRepository.UpdateAsync(order, ct);
         await _orderRepository.SaveChangesAsync(ct);
+
         return _mapper.Map<OrderDto>(order);
     }
 }

@@ -4,6 +4,7 @@ using Marketplace.Web.Extensions;
 using Marketplace.Web.Middleware;
 using Marketplace.Web.Filters;
 using Serilog;
+using System.Text.Json.Serialization;
 
 [assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Marketplace.IntegrationTests")]
 var builder = WebApplication.CreateBuilder(args);
@@ -24,14 +25,16 @@ builder.Services.AddMarketplaceAuthorization();
 
 builder.Services.AddSwaggerDocumentation();
 
-builder.Services.AddControllers(options =>
-{
-    options.Filters.Add<ValidateModelAttribute>();
-})
-.AddJsonOptions(options =>
-{
-    options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
-});
+builder.Services
+    .AddControllers(options =>
+    {
+        options.Filters.Add<ValidateModelAttribute>();
+    })
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(
+            new JsonStringEnumConverter());
+    });
 
 builder.Services.AddHttpContextAccessor();
 

@@ -1,4 +1,5 @@
 using Marketplace.Domain.Common;
+using Marketplace.Domain.Enums;
 
 namespace Marketplace.Domain.Entities;
 
@@ -6,7 +7,7 @@ public class AuditLog : BaseEntity
 {
     public string EntityName { get; private set; } = null!;
     public Guid EntityId { get; private set; }
-    public string Action { get; private set; } = null!;
+    public AuditAction Action { get; private set; }
     public string? OldValues { get; private set; }
     public string? NewValues { get; private set; }
     public Guid? ChangedBy { get; private set; }
@@ -14,7 +15,7 @@ public class AuditLog : BaseEntity
 
     private AuditLog() { }
 
-    public static AuditLog Create(string entityName, Guid entityId, string action,
+    public static AuditLog Create(string entityName, Guid entityId, AuditAction action,
         string? oldValues, string? newValues, Guid? changedBy)
     {
         return new AuditLog

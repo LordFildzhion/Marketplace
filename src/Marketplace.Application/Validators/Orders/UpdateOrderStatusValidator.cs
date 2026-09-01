@@ -1,4 +1,5 @@
 using FluentValidation;
+using Marketplace.Domain.Enums;
 using Marketplace.Application.DTOs.Orders;
 
 namespace Marketplace.Application.Validators.Orders;
@@ -8,7 +9,7 @@ public sealed class UpdateOrderStatusValidator : AbstractValidator<UpdateOrderSt
     public UpdateOrderStatusValidator()
     {
         RuleFor(x => x.NewStatus)
-            .NotEmpty()
-            .Must(status => new[] { "Paid", "InProgress", "Shipped", "Delivered", "Cancelled" }.Contains(status));
+            .Must(status => Enum.IsDefined(typeof(OrderStatus), status))
+            .WithMessage("Invalid order status.");
     }
 }

@@ -1,10 +1,13 @@
+using Marketplace.Domain.Enums;
+
+
 namespace Marketplace.Application.DTOs.Orders;
 
 public class OrderDto
 {
     public Guid Id { get; set; }
     public long UserOrderNumber { get; set; }
-    public string Status { get; set; } = string.Empty;
+    public OrderStatus Status { get; set; }
     public DateTime OrderDate { get; set; }
     public decimal TotalAmount { get; set; }
     public string? UserEmail { get; set; }
@@ -34,6 +37,6 @@ public class ProductBriefDto
 
 public class UpdateOrderStatusRequest
 {
-    public string NewStatus { get; set; } = string.Empty;
+    public OrderStatus NewStatus { get; set; }
     public string? Comment { get; set; }
 }

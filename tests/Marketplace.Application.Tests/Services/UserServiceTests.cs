@@ -64,7 +64,7 @@ public class UserServiceTests
         var seller = User(UserRole.Seller);
         var customer = new User(new Email("alice@example.com"), "hash", "Alice", "Smith", UserRole.Customer);
         _userRepo.Setup(r => r.GetAllAsync(default)).ReturnsAsync(new[] { seller, customer });
-        var result = await _service.GetUsersAsync(new UserFilterRequest { Role = "Seller", Search = "user" });
+        var result = await _service.GetUsersAsync(new UserFilterRequest { Role = UserRole.Seller, Search = "user" });
         result.TotalCount.Should().Be(1);
         result.Items.Should().ContainSingle();
     }

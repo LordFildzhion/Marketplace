@@ -1,4 +1,5 @@
 using Marketplace.Application.DTOs.Orders;
+using Marketplace.Domain.Enums;
 
 namespace Marketplace.Application.Interfaces;
 
@@ -9,5 +10,5 @@ public interface IOrderService
     Task<IReadOnlyList<OrderDto>> GetUserOrdersAsync(Guid userId, CancellationToken ct = default);
     Task<IReadOnlyList<OrderDto>> GetSellerOrdersAsync(Guid sellerId, CancellationToken ct = default);
     Task<IReadOnlyList<OrderDto>> GetAllOrdersAsync(CancellationToken ct = default);
-    Task<OrderDto> UpdateOrderStatusAsync(Guid orderId, string status, Guid userId, bool isAdmin, CancellationToken ct = default);
+    Task<OrderDto> UpdateOrderStatusAsync(Guid orderId, OrderStatus newStatus, Guid userId, bool isAdmin, CancellationToken ct = default);
 }

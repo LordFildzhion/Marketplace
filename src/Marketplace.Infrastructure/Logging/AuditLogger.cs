@@ -1,5 +1,6 @@
 using Marketplace.Infrastructure.Data;
 using Marketplace.Domain.Entities;
+using Marketplace.Domain.Enums;
 using Microsoft.Extensions.Logging;
 
 namespace Marketplace.Infrastructure.Logging;
@@ -15,7 +16,7 @@ public class AuditLogger
         _logger = logger;
     }
 
-    public async Task LogAsync(string entityName, Guid entityId, string action, string? oldValues = null, string? newValues = null, Guid? userId = null)
+    public async Task LogAsync(string entityName, Guid entityId, AuditAction action, string? oldValues = null, string? newValues = null, Guid? userId = null)
     {
         var audit = AuditLog.Create(entityName, entityId, action, oldValues, newValues, userId);
         await _context.AuditLogs.AddAsync(audit);

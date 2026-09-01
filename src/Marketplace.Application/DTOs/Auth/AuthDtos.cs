@@ -1,5 +1,7 @@
 namespace Marketplace.Application.DTOs.Auth;
 
+using Marketplace.Domain.Enums;
+
 public record RegisterRequest
 {
     public string Email { get; init; } = string.Empty;
@@ -8,7 +10,7 @@ public record RegisterRequest
     public string FirstName { get; init; } = string.Empty;
     public string LastName { get; init; } = string.Empty;
     public string? Phone { get; init; }
-    public string? Role { get; init; }   // Customer, Seller, Admin
+    public UserRole? Role { get; init; }
 }
 
 public record LoginRequest(string Email, string Password, bool RememberMe = false);
@@ -29,5 +31,5 @@ public class UserBriefDto
     public string Email { get; init; } = string.Empty;
     public string FirstName { get; init; } = string.Empty;
     public string LastName { get; init; } = string.Empty;
-    public string Role { get; init; } = string.Empty;
+    public UserRole Role { get; init; }
 }

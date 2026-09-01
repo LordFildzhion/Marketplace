@@ -78,14 +78,9 @@ public class AuthService : IAuthService
         return _mapper.Map<UserDto>(user);
     }
 
-    private UserRole DetermineRole(string? roleString)
+    private static UserRole DetermineRole(UserRole? role)
     {
-        if (string.IsNullOrWhiteSpace(roleString))
-            return UserRole.Customer;
-        if (Enum.TryParse<UserRole>(roleString, true, out var parsed))
-            return parsed;
-        else
-            throw new ValidationException("role", $"Invalid role: {roleString}. Allowed: Customer, Seller.");
+        return role ?? UserRole.Customer;
     }
 
     private AuthResponse CreateAuthResponse(User user)
@@ -103,7 +98,7 @@ public class AuthService : IAuthService
                 Email = user.Email.Value,
                 FirstName = user.FirstName,
                 LastName = user.LastName,
-                Role = user.Role.ToString()
+                Role = user.Role
             }
         };
     }

@@ -2,6 +2,7 @@ using FluentAssertions;
 using FluentValidation;
 using Marketplace.Application.DTOs.Auth;
 using Marketplace.Application.DTOs.Cart;
+using Marketplace.Domain.Enums;
 using Marketplace.Application.DTOs.Categories;
 using Marketplace.Application.DTOs.Orders;
 using Marketplace.Application.DTOs.Products;
@@ -33,8 +34,8 @@ public class ValidatorTests
     [Fact] public void AddToCart_ZeroQuantity() => ShouldBeInvalid(new AddToCartValidator(), new AddToCartRequest { ProductId=Guid.NewGuid(), Quantity=0 });
     [Fact] public void UpdateCart_ZeroQuantity_IsValidByContract() => ShouldBeValid(new UpdateCartItemValidator(), new UpdateCartItemRequest { ProductId=Guid.NewGuid(), Quantity=0 });
 
-    [Fact] public void UpdateOrderStatus_Valid() => ShouldBeValid(new UpdateOrderStatusValidator(), new UpdateOrderStatusRequest { NewStatus="Shipped" });
-    [Fact] public void UpdateOrderStatus_Invalid() => ShouldBeInvalid(new UpdateOrderStatusValidator(), new UpdateOrderStatusRequest { NewStatus="Draft" });
+    [Fact] public void UpdateOrderStatus_Valid() => ShouldBeValid(new UpdateOrderStatusValidator(), new UpdateOrderStatusRequest { NewStatus= OrderStatus.Shipped });
+    [Fact] public void UpdateOrderStatus_Invalid() => ShouldBeInvalid(new UpdateOrderStatusValidator(), new UpdateOrderStatusRequest { NewStatus = (OrderStatus)999 });
 
     [Fact] public void Payment_Valid() => ShouldBeValid(new ProcessPaymentValidator(), new ProcessPaymentRequest { OrderId=Guid.NewGuid() });
     [Fact] public void Payment_MissingOrder() => ShouldBeInvalid(new ProcessPaymentValidator(), new ProcessPaymentRequest());

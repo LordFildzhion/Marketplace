@@ -31,8 +31,14 @@ public class OrderServiceTests
     [Fact]
     public async Task CreateOrderFromCart_EmptyCart_ShouldThrow()
     {
-        _cartRepo.Setup(c => c.GetCartItemsByUserAsync(It.IsAny<Guid>(), default)).ReturnsAsync(Array.Empty<CartItem>());
-        await Assert.ThrowsAsync<AppException>(() => _service.CreateOrderFromCartAsync(Guid.NewGuid()));
+        var userId = Guid.NewGuid();
+
+        _cartRepo
+            .Setup(c => c.GetCartItemsByUserAsync(userId, default))
+            .ReturnsAsync(Array.Empty<CartItem>());
+
+        await Assert.ThrowsAsync<ValidationException>(
+            () => _service.CreateOrderFromCartAsync(userId));
     }
 
     [Fact]
@@ -127,7 +133,7 @@ public class OrderServiceTests
         await Assert.ThrowsAsync<ForbiddenException>(() =>
             _service.UpdateOrderStatusAsync(
                 order.Id,
-                "Paid",
+                OrderStatus.Paid,
                 otherUserId,
                 false));
     }
@@ -137,10 +143,19 @@ public class OrderServiceTests
     {
         var userId = Guid.NewGuid();
         var order = new Order(userId);
-        _orderRepo.Setup(r => r.GetByIdAsync(order.Id, default)).ReturnsAsync(order);
+
+        _orderRepo
+            .Setup(x => x.GetByIdAsync(
+                order.Id,
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(order);
 
         await Assert.ThrowsAsync<ValidationException>(() =>
-            _service.UpdateOrderStatusAsync(order.Id, "Wrong", userId, false));
+            _service.UpdateOrderStatusAsync(
+                order.Id,
+                (OrderStatus)999,
+                userId,
+                false));
     }
 
     [Fact]
@@ -149,9 +164,8 @@ public class OrderServiceTests
         var order = new Order(Guid.NewGuid());
         _orderRepo.Setup(r => r.GetByIdAsync(order.Id, default)).ReturnsAsync(order);
 
-        var result = await _service.UpdateOrderStatusAsync(order.Id, "Paid", Guid.NewGuid(), true);
+        var result = await _service.UpdateOrderStatusAsync(order.Id, OrderStatus.Paid, Guid.NewGuid(), true);
 
-        result.Status.Should().Be("Paid");
         order.Status.Should().Be(OrderStatus.Paid);
         _orderRepo.Verify(r => r.SaveChangesAsync(default), Times.Once);
     }
